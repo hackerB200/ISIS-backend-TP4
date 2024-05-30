@@ -2,7 +2,7 @@
     <main>
         <div>
             <h1>Les produits</h1>
-            <h3>Page {{ actualPage + 1 }} / {{ totalPages }}</h3>
+            <h3 v-if="totalPages != 0">Page {{ actualPage + 1 }} / {{ totalPages }}</h3>
         </div>
         <div>
             <table>
@@ -22,7 +22,7 @@
                     <td>{{ produit.unitesEnStock }}</td>
                     <td>{{ produit.unitesCommandees }}</td>
                 </tr>
-                <tr>
+                <tr v-if="totalPages != 0">
                     <td><button @click="goStart" :disabled="actualPage == 0">Debut</button></td>
                     <td><button @click="goBackward" :disabled="actualPage <= 0">Precedent</button></td>
                     <td><button @click="goForward" :disabled="actualPage >= totalPages - 1">Suivant</button>
@@ -38,10 +38,13 @@
 <script setup>
 import { reactive, onMounted, ref } from "vue";
 import { doAjaxRequest } from "@/api";
+import { useRoute } from "vue-router";
 
 let produits = ref([])
 let actualPage = ref(0);
 let totalPages = ref(0);
+let categorie = undefined;
+let route = useRoute();
 
 // BOUTONS
 
@@ -83,17 +86,31 @@ function chargeProduits(page = 0, size = 5) {
     if (page < 0 || size < 1) {
         return showError({ status: 400, message: "Page invalide" });
     }
-
-    doAjaxRequest("/api/produits?sort=nom,asc&page=" + page + "&size=" + size)
+    let url = "/api/produits?sort=nom,asc&page=" + page + "&size=" + size;
+    if (categorie) {
+        url = "/api/categories/" + categorie + "/produits?sort=nom,asc&page=" + page + "&size=" + size;
+    }
+    doAjaxRequest(url)
         .then((json) => {
             produits.value = json._embedded.produits;
-            actualPage.value = json.page.number
-            totalPages.value = json.page.totalPages
+            if (json.page) {
+                actualPage.value = json.page.number
+                totalPages.value = json.page.totalPages
+            }
         })
-        .catch(showError);
+        .catch(error => {
+            // showError(error);
+            console.log(error);
+        });
 }
 
-onMounted(chargeProduits);
+onMounted(() => {
+
+    if (route.query.categorie) {
+        categorie = route.query.categorie;
+    }
+    chargeProduits();
+});
 
 </script>
 

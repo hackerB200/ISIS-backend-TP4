@@ -36,6 +36,11 @@
                             Supprimer
                         </button>
                     </td>
+                    <td>
+                        <button @click="seeProducts(categorie.code)">
+                            Voir produits
+                        </button>
+                    </td>
                 </tr>
             </table>
         </div>
@@ -45,6 +50,9 @@
 <script setup>
 import { reactive, onMounted } from "vue";
 import { doAjaxRequest } from "@/api";
+import { useRouter } from "vue-router";
+
+let router = useRouter();
 
 // Pour réinitialiser le formulaire
 const categorieVide = {
@@ -100,9 +108,13 @@ function ajouteCategorie() {
  * @param entityRef l'URI de l'entité à supprimer
  */
 function deleteEntity(entityRef) {
-    doAjaxRequest(entityRef, { method: "DELETE", headers: { "Accept": "application/json" }})
+    doAjaxRequest(entityRef, { method: "DELETE", headers: { "Accept": "application/json" } })
         .then(chargeCategories)
         .catch(showError);
+}
+
+function seeProducts(codeCategorie) {
+    router.push({ name: "produits", query: { categorie: codeCategorie } });
 }
 
 // A l'affichage du composant, on affiche la liste
